@@ -22,7 +22,7 @@ def load_payers():
             "eligibility": p["transactionSupport"].get("eligibilityCheck") == "SUPPORTED",
         }
         for p in data["items"]
-        # if p["transactionSupport"].get("eligibilityCheck") == "SUPPORTED"
+        if p["transactionSupport"].get("eligibilityCheck") == "SUPPORTED"
     ]
 
 def render_form():
@@ -51,6 +51,7 @@ def render_form():
     service_type_code = st.selectbox(
         "Service type code *",
         load_service_type_codes(),
+        placeholder="Select a Service Type Code",
     )
 
     st.header("Subscriber")
