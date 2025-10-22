@@ -12,14 +12,20 @@ def render_batch_form():
     st.info("Upload an Excel file with subscriber demographics to check eligibility in batch.")
     
     # Optional: template download
-    if st.button("Download template Excel"):
-        template_df = pd.DataFrame(columns=[
-            "MemberID", "FirstName", "LastName", "DOB", 
-            "ProviderName", "ProviderNPI", "ServiceCode", "TradingPartnerID"
-        ])
-        template_file = "batch_template.xlsx"
-        template_df.to_excel(template_file, index=False)
-        st.download_button("Download template", data=open(template_file, "rb"), file_name=template_file)
+    template_df = pd.DataFrame(columns=[
+        "MemberID", "FirstName", "LastName", "DOB", 
+        "ProviderName", "ProviderNPI", "ServiceCode", "TradingPartnerID"
+    ])
+
+    template_file = "batch_template.xlsx"
+    template_df.to_excel(template_file, index=False)
+
+    st.download_button(
+        label="Download template Excel",
+        data=open(template_file, "rb"),
+        file_name="batch_template.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
     
     uploaded_file = st.file_uploader("Drag and drop your Excel file here",
                                      type=["xlsx", "xls"],
