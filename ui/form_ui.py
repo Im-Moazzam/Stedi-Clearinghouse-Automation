@@ -48,10 +48,11 @@ def render_form():
     )
 
     st.header("Encounter")
+    options = load_service_type_codes()
     service_type_code = st.selectbox(
         "Service type code *",
-        load_service_type_codes(),
-        placeholder="Select a Service Type Code",
+        options,
+        index = options.index("30: Health Benefit Plan Coverage")
     )
 
     st.header("Subscriber")
@@ -103,6 +104,83 @@ def render_form():
         with st.spinner("Checking eligibility..."):
             response = check_eligibility(form_data)
 
-        st.subheader("Response")
-        st.json(response)
+        st.subheader("Response Summary")
+
+        try:
+            if isinstance(response, str):
+                response = json.loads(response)
+
+            # === Meta Section ===
+            with st.expander("Meta Information", expanded=False):
+                meta = response.get("meta", {})
+                st.write(f"**Sender ID:** {meta.get('senderId')}")
+                st.write(f"**Submitter ID:** {meta.get('submitterId')}")
+                st.write(f"**Trace ID:** {meta.get('traceId')}")
+
+            # === Provider Information ===
+            with st.expander("Provider Information", expanded=False):
+                provider = response.get("provider", {})
+                st.write(f"**Provider Name:** {provider.get('providerName')}")
+                st.write(f"**Organization:** {provider.get('providerOrgName')}")
+                st.write(f"**NPI:** {provider.get('npi')}")
+
+            # === Subscriber Information ===
+            with st.expander("Subscriber Information", expanded=False):
+                sub = response.get("subscriber", {})
+                cols = st.columns(2)
+                cols[0].write(f"**Name:** {sub.get('firstName')} {sub.get('lastName')}")
+                cols[0].write(f"**Gender:** {sub.get('gender')}")
+                cols[0].write(f"**DOB:** {sub.get('dateOfBirth')}")
+                cols[1].write(f"**Member ID:** {sub.get('memberId')}")
+                cols[1].write(f"**Group #:** {sub.get('groupNumber')}")
+                address = sub.get("address", {})
+                st.write(f"**Address:** {address.get('address1')}, {address.get('city')}, {address.get('state')} {address.get('postalCode')}")
+
+            # === Payer Information ===
+            with st.expander("Payer Information", expanded=False):
+                payer = response.get("payer", {})
+                st.write(f"**Name:** {payer.get('name')}")
+                st.write(f"**Tax ID:** {payer.get('federalTaxpayersIdNumber')}")
+                contacts = payer.get("contactInformation", {}).get("contacts", [])
+                if contacts:
+                    st.subheader("Contacts")
+                    for c in contacts:
+                        st.write(f"- {c.get('communicationMode')}: {c.get('communicationNumber')}")
+
+            # === Plan Information ===
+            with st.expander("Plan Information", expanded=False):
+                plan = response.get("planInformation", {})
+                plan_dates = response.get("planDateInformation", {})
+                st.write(f"**Group #:** {plan.get('groupNumber')}")
+                st.write(f"**Description:** {plan.get('groupDescription')}")
+                st.write(f"**Plan Start:** {plan_dates.get('planBegin')}")
+                st.write(f"**Plan End:** {plan_dates.get('planEnd')}")
+                st.write(f"**Eligibility Start:** {plan_dates.get('eligibilityBegin')}")
+
+            # === Plan Status ===
+            import pandas as pd
+            with st.expander("Plan Status Details", expanded=False):
+                plan_status = response.get("planStatus", [])
+                if plan_status:
+                    st.dataframe(pd.DataFrame(plan_status))
+
+            # === Benefits Information ===
+            with st.expander("Benefits Information", expanded=True):
+                benefits = response.get("benefitsInformation", [])
+                if benefits:
+                    df = pd.DataFrame(benefits)
+                    df["serviceTypeCodes"] = df["serviceTypeCodes"].apply(lambda x: ", ".join(x) if isinstance(x, list) else x)
+                    df["serviceTypes"] = df["serviceTypes"].apply(lambda x: ", ".join(x) if isinstance(x, list) else x)
+                    st.dataframe(df[["name", "coverageLevel", "benefitAmount", "benefitPercent", "inPlanNetworkIndicator", "serviceTypes"]].fillna(""))
+
+            # === Errors ===
+            errors = response.get("errors", [])
+            if errors:
+                st.error("Errors found in response:")
+                st.json(errors)
+
+        except Exception as e:
+            st.error(f"Failed to parse or display response: {e}")
+            st.json(response)
+
 
