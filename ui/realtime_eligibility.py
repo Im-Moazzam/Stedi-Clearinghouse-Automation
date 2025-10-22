@@ -1,29 +1,9 @@
 import streamlit as st
 import json
 import datetime
-from pathlib import Path
 from services.eligibility_service import check_eligibility, build_request_body
+from utils.utils import load_service_type_codes, load_payers
 
-def load_service_type_codes():
-    path = Path("data/service_type_codes.json")
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return [f"{k}: {v}" for k, v in data.items()]
-
-def load_payers():
-    path = Path("data/payers.json")
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    # Only show those that support eligibility
-    return [
-        {
-            "displayName": p["displayName"],
-            "primaryPayerId": p["primaryPayerId"],
-            "eligibility": p["transactionSupport"].get("eligibilityCheck") == "SUPPORTED",
-        }
-        for p in data["items"]
-        if p["transactionSupport"].get("eligibilityCheck") == "SUPPORTED"
-    ]
 
 def render_form():
     st.header("Payer Information")
