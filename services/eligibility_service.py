@@ -4,13 +4,13 @@ from config.settings import (
     ELIGIBILITY_URL,
     BATCH_ELIGIBILITY_URL,
     POLL_URL,
-    STEDI_TEST_API,
+    STEDI_API_KEY,
 )
 
 logger = logging.getLogger(__name__)
 
 HEADERS = {
-    "Authorization": STEDI_TEST_API,
+    "Authorization": STEDI_API_KEY,
     "Content-Type": "application/json",
 }
 
